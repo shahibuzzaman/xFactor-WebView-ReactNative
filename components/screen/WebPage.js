@@ -5,13 +5,13 @@ import {WebView} from 'react-native-webview';
 const WebPage = ({navigation, url}) => {
   const [isLoadong, setLoading] = useState(false);
 
-  console.log(url);
+  console.log('urlll', url);
 
   return (
     <View style={{flex: 1}}>
       <WebView
         originWhitelist={['*']}
-        source={{uri: `${url}`}}
+        source={{uri: `${url[0].url}`}}
         onLoadStart={(syntheticEvent) => {
           setLoading(true);
         }}

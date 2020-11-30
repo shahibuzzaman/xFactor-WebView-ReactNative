@@ -1,11 +1,13 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, TextInput, Button, Image, Alert} from 'react-native';
 import WebPage from './WebPage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const HomeScreen = ({navigation}) => {
   const [data, setData] = useState({
     pin: '',
   });
+  const [isLoadong, setLoading] = useState(false);
   const [url, setUrl] = useState('');
 
   const nameInputChange = (value) => {
@@ -24,32 +26,104 @@ const HomeScreen = ({navigation}) => {
 
   console.log(data.pin);
 
-  const loginAction = () => {
-    fetch('http://unisoft.clonestudiobd.com/api/redirect', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        pin: data.pin,
-      }),
-    }).then((response) => {
-      response.json().then((result) => {
-        setUrl(result[0].url);
+  const storePin = async () => {
+    try {
+      await AsyncStorage.setItem('pin', data.pin);
+    } catch (e) {
+      // saving error
+    }
+  };
+
+  const loginAction = async () => {
+    try {
+      await fetch('http://unisoft.clonestudiobd.com/api/redirect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          pin: data.pin,
+        }),
+      }).then((response) => {
+        const getStatus = response.status;
+        console.log(getStatus);
+
+        if (getStatus === 200) {
+          response
+            .json()
+            .then((result) => {
+              setUrl(result);
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+          storePin();
+        } else {
+          Alert.alert(
+            'Invalid Pin!',
+            '',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setData({
+                    pin: '',
+                  }),
+                    console.log('OK Pressed');
+                },
+              },
+            ],
+            {cancelable: false},
+          );
+        }
       });
-    });
+    } catch (e) {}
+  };
+
+  const loginEffect = async (value) => {
+    try {
+      await fetch('http://unisoft.clonestudiobd.com/api/redirect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          pin: value,
+        }),
+      }).then((response) => {
+        response
+          .json()
+          .then((result) => {
+            setUrl(result);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      });
+    } catch (e) {}
   };
 
   console.log('url', url);
 
-  if (url != '') {
-    return (
-      <View style={{flex: 1}}>
-        <WebPage navigation={navigation} url={url} />
-      </View>
-    );
-  } else {
+  const loginData = async () => {
+    try {
+      let value = await AsyncStorage.getItem('pin');
+
+      console.log('pin', value);
+
+      if (value !== null) {
+        loginEffect(value);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loginData();
+  }, []);
+
+  if (url === '') {
     return (
       <View
         style={{
@@ -58,29 +132,15 @@ const HomeScreen = ({navigation}) => {
           alignItems: 'center',
           backgroundColor: 'white',
         }}>
-        {/* <TextInput
-          autoFocus={true}
-          keyboardType="numeric"
-          onChangeText={(text) => setPin(text)}
-          style={{
-            backgroundColor: 'white',
-            fontSize: 20,
-            height: 55,
-            width: '50%',
-            marginBottom: 20,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: 'grey',
-          }}
-        /> */}
         <Image
           style={{height: 120, width: 200}}
           source={require('../asset/logo.png')}
         />
         <TextInput
           placeholder="Your Pin"
-          autoFocus={true}
+          textAlign={'center'}
           keyboardType="numeric"
+          autoFocus={true}
           style={{
             backgroundColor: 'white',
             fontSize: 20,
@@ -109,6 +169,12 @@ const HomeScreen = ({navigation}) => {
             }}
           />
         </View>
+      </View>
+    );
+  } else {
+    return (
+      <View style={{flex: 1}}>
+        <WebPage navigation={navigation} url={url} />
       </View>
     );
   }
