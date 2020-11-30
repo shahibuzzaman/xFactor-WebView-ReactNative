@@ -140,7 +140,6 @@ const HomeScreen = ({navigation}) => {
           placeholder="Your Pin"
           textAlign={'center'}
           keyboardType="numeric"
-          autoFocus={true}
           style={{
             backgroundColor: 'white',
             fontSize: 20,
